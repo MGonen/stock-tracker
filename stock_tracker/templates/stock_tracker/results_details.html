@@ -1,0 +1,77 @@
+{% extends 'stock_tracker/base.html' %}
+{% load static %}
+{% load humanize %}
+
+
+{% block scripts %}
+    <script src="{% static 'stock_tracker/js/scripts.js' %}"></script>
+    <script type="text/javascript">
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(drawChart);
+
+    function drawChart() {
+        var results = [['Date', 'Price', 'Volume']];
+        {% for result in results %}
+          var result = ['{{ result.date }}', Number('{{ result.price }}'), Number('{{ result.volume }}')];
+          results.push(result);
+        {% endfor %}
+
+
+    var data = google.visualization.arrayToDataTable(results);
+
+    var options = {
+
+        title: '{{ company_name }} ({{ exchange }} - {{ country }}).\nTotal change over period: {{ increase }}%',
+        curveType: 'function',
+{#        vAxis: {title: 'Price'},#}
+        vAxes: {0: {title: 'Price'},
+                1: {title: 'Volume'},
+        },
+
+        hAxis: {title: 'Date'},
+        legend: { position: 'top' },
+        series: { 0: {targetAxisIndex: 0 },
+                  1: {targetAxisIndex: 1 },
+        },
+    };
+
+    var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+
+    chart.draw(data, options);
+    }
+    </script>
+{% endblock %}
+
+
+
+
+{% block content %}
+    <div class="col-sm-6"></div>
+    <div>
+        <button class="btn btn-primary btn-xl" id="show-data-btn">Show Data Table</button>
+        <button class="btn btn-primary" id="hide-data-btn">Hide Data Table</button>
+    </div>
+
+    <div id="curve_chart" style="width: 1100px; height: 700px"></div>
+
+    <div id="details-table">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <td>Date</td>
+                    <td>Price</td>
+                    <td>Volume Turnover</td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                    <tr>
+                        <td>{{ result.date }}</td>
+                        <td>{{ result.price }}</td>
+                        <td>{{ result.volume|intcomma }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

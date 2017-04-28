@@ -1,0 +1,13 @@
+
+thead td {
+    background-color: #333333;
+    color: #ffffff;
+}
+
+#myTable thead td {
+    cursor: hand;
+}
+
+thead td:focus {
+    background-color: #003366;
+}

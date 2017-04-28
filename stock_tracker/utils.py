@@ -250,7 +250,7 @@ class GetHistoricStockInfo():
                 print 'already exists:', Stock.objects.filter(company=company, date=date)
                 continue
 
-            if date[:4] not in ['2017', '2016']:
+            if date[:4] not in ['2017', '2016', '2015', '2014']:
                 break
 
             if volume < 1000:

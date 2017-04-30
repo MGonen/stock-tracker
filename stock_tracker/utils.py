@@ -106,6 +106,10 @@ class GetStockInfo():
 
     @classmethod
     def _save_records(cls, records):
+        if not records:
+            print '-NO RECORDS SAVED OF NEXT COMPLETED'
+            return
+
         chunks = [records[x:x + 500] for x in xrange(0, len(records), 500)]
         for number, chunk in enumerate(chunks):
             Stock.objects.bulk_create(chunk)
@@ -187,50 +191,36 @@ class GetHistoricStockInfo(GetStockInfo):
     @classmethod
     def get_data_all_stocks(cls):
         companies = list(Company.objects.filter(historic_collected=False))
-        all_companies_length = len(Company.objects.all())
-        prev_len = len(Stock.objects.all())
 
-        for number, company in enumerate(companies):
-            print 'Proccessing company: %s -  %s/%s' % (
-                company.symbol, all_companies_length-len(companies)+number+1, all_companies_length)
-
+        for company in companies[:20]:
             try:
                 cls.remove_stock_data(company)
                 cls.get_stock_data(company)
                 company.historic_collected = True
                 company.save()
 
-                print '- Number of new entries:', len(Stock.objects.all()) - prev_len
-                prev_len = len(Stock.objects.all())
                 time.sleep(1)
 
-            except UnicodeEncodeError:
-                print "\n\n\nUnicode Encoding error caught!\n\n\n"
+            except (UnicodeEncodeError, IndexError, ValueError):
                 continue
+
+            print 'COMPLETED - %s' % (company.name,)
+
 
     @classmethod
     def remove_stock_data(cls, company):
-        filtered_stocks = Stock.objects.filter(company=company)
-        print 'before deletion:',len(filtered_stocks)
         Stock.objects.filter(company=company).delete()
-        print 'after deletion:', len(Stock.objects.filter(company=company))
 
     @classmethod
     def get_stock_data(cls, company):
         url = cls._create_url(company)
-
-        print '- request to be sent'
         data = cls._request_csv_data(url)
-        print '- response received'
-
         records = cls._create_records(data, company.symbol)
         cls._save_records(records)
-        print '- data saved'
 
     @classmethod
     def _create_url(cls, company):
         stock_symbol = company.symbol
-        print 'Stock symbol:', stock_symbol
         url = "http://ichart.finance.yahoo.com/table.csv?s=%s&g= spa2" % (stock_symbol)
         return url
 
@@ -243,8 +233,6 @@ class GetHistoricStockInfo(GetStockInfo):
                 volume = int(item[5])
                 date = item[0]
             except IndexError as e:
-                print 'Index Error:', e
-                print data
                 return
             except ValueError:
                 continue

@@ -183,8 +183,10 @@ class GetHistoricStockInfo(GetStockInfo):
     @classmethod
     def _get_data(cls):
         companies = list(Company.objects.filter(historic_collected=False))
+        total_number = 1000
 
-        for company in companies[:100]:
+        for number, company in enumerate(companies[:total_number]):
+            print "Processing Company %i/%i" % (number, total_number)
             try:
                 cls.remove_stock_data(company)
                 records = cls.get_stock_data(company)
@@ -197,9 +199,6 @@ class GetHistoricStockInfo(GetStockInfo):
 
             except (UnicodeEncodeError, IndexError, ValueError):
                 continue
-
-            print 'COMPLETED - %s' % (company.name,)
-
 
     @classmethod
     def remove_stock_data(cls, company):

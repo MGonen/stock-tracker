@@ -115,7 +115,9 @@ class GetDailyStockInfo(GetStockInfo):
     @classmethod
     def main(cls):
         print '\n Stock Info will now be fetched and saved'
-        cls.get_data()
+        records = list(cls.get_data())
+        records = [item for sublist in records for item in sublist]
+        cls._save_records(records)
         print 'All available stock data has been saved\n'
 
 
@@ -123,14 +125,10 @@ class GetDailyStockInfo(GetStockInfo):
     def get_data(cls):
         companies = list(Company.objects.all())
         chunks = [companies[x:x + 1000] for x in xrange(0, len(companies), 1000)]
-        prev_len = len(Stock.objects.all())
 
         for number, chunk in enumerate(chunks):
             print 'Proccessing chunk number: %s/%s' % (number + 1, len(chunks))
-            cls.process_chunk(chunk)
-            print '- Number of new entries:', len(Stock.objects.all()) - prev_len
-
-            prev_len = len(Stock.objects.all())
+            yield cls.process_chunk(chunk)
             time.sleep(1)
 
 
@@ -139,8 +137,7 @@ class GetDailyStockInfo(GetStockInfo):
         url = cls._create_url(chunk)
         data = cls._request_csv_data(url)
         records = cls._create_records(data)
-        cls._save_records(records)
-        print '- data saved'
+        return records
 
 
     @classmethod

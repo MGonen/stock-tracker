@@ -88,7 +88,18 @@ class FillCompanyDB():
 
 
 class GetStockInfo():
-    BASE_URL = ''
+    @classmethod
+    def main(cls):
+        print '\n Stock Info will now be fetched and saved'
+        records = list(cls._get_data())
+        records = [item for sublist in records for item in sublist]
+        cls._save_records(records)
+        print 'All available stock data has been saved\n'
+
+    @classmethod
+    def _get_data(cls):
+        # Will be overwritten
+        return
 
     @classmethod
     def _get_stock_symbols(cls, exchange):
@@ -107,7 +118,7 @@ class GetStockInfo():
     @classmethod
     def _save_records(cls, records):
         if not records:
-            print '-NO RECORDS SAVED OF NEXT COMPLETED'
+            print '-NO RECORDS SAVED'
             return
 
         chunks = [records[x:x + 500] for x in xrange(0, len(records), 500)]
@@ -117,16 +128,7 @@ class GetStockInfo():
 
 class GetDailyStockInfo(GetStockInfo):
     @classmethod
-    def main(cls):
-        print '\n Stock Info will now be fetched and saved'
-        records = list(cls.get_data())
-        records = [item for sublist in records for item in sublist]
-        cls._save_records(records)
-        print 'All available stock data has been saved\n'
-
-
-    @classmethod
-    def get_data(cls):
+    def _get_data(cls):
         companies = list(Company.objects.all())
         chunks = [companies[x:x + 1000] for x in xrange(0, len(companies), 1000)]
 
@@ -135,14 +137,12 @@ class GetDailyStockInfo(GetStockInfo):
             yield cls.process_chunk(chunk)
             time.sleep(1)
 
-
     @classmethod
     def process_chunk(cls, chunk):
         url = cls._create_url(chunk)
         data = cls._request_csv_data(url)
         records = cls._create_records(data)
         return records
-
 
     @classmethod
     def _create_url(cls, stocks):
@@ -165,8 +165,6 @@ class GetDailyStockInfo(GetStockInfo):
                 volume = int(item[2])
                 date = timezone.now().date() - timezone.timedelta(days=1)
             except IndexError as e:
-                print 'Index Error:', e
-                print data
                 continue
             except ValueError:
                 continue
@@ -183,19 +181,15 @@ class GetDailyStockInfo(GetStockInfo):
 
 class GetHistoricStockInfo(GetStockInfo):
     @classmethod
-    def main(cls):
-        print '\n Historic Stock Info will now be fetched and saved'
-        cls.get_data_all_stocks()
-        print 'All available stock data has been saved\n'
-
-    @classmethod
-    def get_data_all_stocks(cls):
+    def _get_data(cls):
         companies = list(Company.objects.filter(historic_collected=False))
 
         for company in companies[:20]:
             try:
                 cls.remove_stock_data(company)
-                cls.get_stock_data(company)
+                records = cls.get_stock_data(company)
+                if records:
+                    yield records
                 company.historic_collected = True
                 company.save()
 
@@ -215,8 +209,8 @@ class GetHistoricStockInfo(GetStockInfo):
     def get_stock_data(cls, company):
         url = cls._create_url(company)
         data = cls._request_csv_data(url)
-        records = cls._create_records(data, company.symbol)
-        cls._save_records(records)
+        return cls._create_records(data, company.symbol)
+
 
     @classmethod
     def _create_url(cls, company):

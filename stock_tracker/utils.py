@@ -56,6 +56,7 @@ class FillCompanyDB():
         if not Company.objects.all():
             records = cls.create_records()
             cls.save_records(records)
+            print 'All data has been saved to the DB\n'
 
         else:
             print 'Symbol DB already filled'
@@ -70,16 +71,12 @@ class FillCompanyDB():
             companies.append(Company(symbol=symbol_dict['symbol'], name=symbol_dict['name'], exchange=symbol_dict['exchange'], country=symbol_dict['country']))
         return companies
 
-        print 'All data has been saved to the DB\n'
-
     @classmethod
     def save_records(cls, records):
         chunks = [records[x:x + 500] for x in xrange(0, len(records), 500)]
         for number, chunk in enumerate(chunks):
             print 'Now Saving: %s/%s' % (number, len(chunks))
             Company.objects.bulk_create(chunk)
-
-
 
     @classmethod
     def get_symbol_dicts(cls):
@@ -90,39 +87,61 @@ class FillCompanyDB():
         return json.loads(content)
 
 
-class GetDailyStockInfo():
-
-    @classmethod
-    def main(cls):
-        print '\n Stock Info will now be fetched and saved'
-
-        companies = list(Company.objects.all())
-        chunks = [companies[x:x + 1000] for x in xrange(0, len(companies), 1000)]
-
-        prev_len = len(Stock.objects.all())
-        for number, chunk in enumerate(chunks):
-            print 'Proccessing chunk number: %s/%s' % (number + 1, len(chunks))
-            url = cls._create_url(chunk)
-
-            print '- request to be sent'
-            data = cls._request_csv_data(url)
-            print '- response received'
-
-            records = cls._create_records(data)
-            cls._save_records(records)
-
-            print '- data saved'
-
-            print '- Number of new entries:', len(Stock.objects.all()) - prev_len
-            prev_len = len(Stock.objects.all())
-
-            time.sleep(1)
-
-        print 'All available stock data has been saved\n'
+class GetStockInfo():
+    BASE_URL = ''
 
     @classmethod
     def _get_stock_symbols(cls, exchange):
         return Company.objects.filter(exchange=exchange)
+
+    @classmethod
+    def _request_csv_data(cls, url):
+        with requests.Session() as s:
+            download = s.get(url)
+
+            decoded_content = download.content.decode('utf-8')
+
+            data = csv.reader(decoded_content.splitlines(), delimiter=str(u','))
+            return list(data)
+
+    @classmethod
+    def _save_records(cls, records):
+        chunks = [records[x:x + 500] for x in xrange(0, len(records), 500)]
+        for number, chunk in enumerate(chunks):
+            Stock.objects.bulk_create(chunk)
+
+
+class GetDailyStockInfo(GetStockInfo):
+    @classmethod
+    def main(cls):
+        print '\n Stock Info will now be fetched and saved'
+        cls.get_data()
+        print 'All available stock data has been saved\n'
+
+
+    @classmethod
+    def get_data(cls):
+        companies = list(Company.objects.all())
+        chunks = [companies[x:x + 1000] for x in xrange(0, len(companies), 1000)]
+        prev_len = len(Stock.objects.all())
+
+        for number, chunk in enumerate(chunks):
+            print 'Proccessing chunk number: %s/%s' % (number + 1, len(chunks))
+            cls.process_chunk(chunk)
+            print '- Number of new entries:', len(Stock.objects.all()) - prev_len
+
+            prev_len = len(Stock.objects.all())
+            time.sleep(1)
+
+
+    @classmethod
+    def process_chunk(cls, chunk):
+        url = cls._create_url(chunk)
+        data = cls._request_csv_data(url)
+        records = cls._create_records(data)
+        cls._save_records(records)
+        print '- data saved'
+
 
     @classmethod
     def _create_url(cls, stocks):
@@ -135,16 +154,6 @@ class GetDailyStockInfo():
 
         url = 'http://finance.yahoo.com/d/quotes.csv?s=%s&f=spa2' % (companies_string,)
         return url
-
-    @classmethod
-    def _request_csv_data(cls, url):
-        with requests.Session() as s:
-            download = s.get(url)
-
-            decoded_content = download.content.decode('utf-8')
-
-            data = csv.reader(decoded_content.splitlines(), delimiter=str(u','))
-            return list(data)
 
     @classmethod
     def _create_records(cls, data):
@@ -170,28 +179,23 @@ class GetDailyStockInfo():
             records.append(Stock(company=company, price=price, volume=volume, date=date))
         return records
 
-    @classmethod
-    def _save_records(cls, records):
-        chunks = [records[x:x + 500] for x in xrange(0, len(records), 500)]
-        for number, chunk in enumerate(chunks):
-            Stock.objects.bulk_create(chunk)
 
-
-class GetHistoricStockInfo():
+class GetHistoricStockInfo(GetStockInfo):
     @classmethod
     def main(cls):
         print '\n Historic Stock Info will now be fetched and saved'
         cls.get_data_all_stocks()
         print 'All available stock data has been saved\n'
-        return
 
     @classmethod
     def get_data_all_stocks(cls):
         companies = list(Company.objects.filter(historic_collected=False))
         all_companies_length = len(Company.objects.all())
         prev_len = len(Stock.objects.all())
+
         for number, company in enumerate(companies):
-            print 'Proccessing company: %s -  %s/%s' % (company.symbol, all_companies_length-len(companies)+number+1, all_companies_length)
+            print 'Proccessing company: %s -  %s/%s' % (
+                company.symbol, all_companies_length-len(companies)+number+1, all_companies_length)
 
             try:
                 cls.remove_stock_data(company)
@@ -226,28 +230,12 @@ class GetHistoricStockInfo():
         cls._save_records(records)
         print '- data saved'
 
-
-    @classmethod
-    def _get_stock_symbols(cls, exchange):
-        return Company.objects.filter(exchange=exchange)
-
     @classmethod
     def _create_url(cls, company):
         stock_symbol = company.symbol
         print 'Stock symbol:', stock_symbol
         url = "http://ichart.finance.yahoo.com/table.csv?s=%s&g= spa2" % (stock_symbol)
         return url
-
-    @classmethod
-    def _request_csv_data(cls, url):
-        with requests.Session() as s:
-            download = s.get(url)
-
-            decoded_content = download.content.decode('utf-8')
-
-            data = csv.reader(decoded_content.splitlines(), delimiter=str(u','))
-            return list(data)
-
 
     @classmethod
     def _create_records(cls, data, symbol):
@@ -276,13 +264,8 @@ class GetHistoricStockInfo():
             if volume < 1000:
                 continue
 
-
             records.append(Stock(company=company, price=price, volume=volume, date=date))
         return records
 
-    @classmethod
-    def _save_records(cls, records):
-        chunks = [records[x:x + 500] for x in xrange(0, len(records), 500)]
-        for number, chunk in enumerate(chunks):
-            Stock.objects.bulk_create(chunk)
+
 

@@ -54,23 +54,32 @@ class FillCompanyDB():
     @classmethod
     def main(cls):
         if not Company.objects.all():
-            cls.fill_symbol_db()
+            records = cls.create_records()
+            cls.save_records(records)
 
         else:
             print 'Symbol DB already filled'
 
     @classmethod
-    def fill_symbol_db(cls):
+    def create_records(cls):
+        companies = []
         symbols_dicts = cls.get_symbol_dicts()
 
         print '\nCompany info will now be saved into DB'
         for number, symbol_dict in enumerate(symbols_dicts):
-            if number % 100 == 0:
-                print 'Now processing: %s/%s' % (number, len(symbols_dicts))
-            c = Company(symbol=symbol_dict['symbol'], name=symbol_dict['name'], exchange=symbol_dict['exchange'], country=symbol_dict['country'])
-            c.save()
+            companies.append(Company(symbol=symbol_dict['symbol'], name=symbol_dict['name'], exchange=symbol_dict['exchange'], country=symbol_dict['country']))
+        return companies
 
         print 'All data has been saved to the DB\n'
+
+    @classmethod
+    def save_records(cls, records):
+        chunks = [records[x:x + 500] for x in xrange(0, len(records), 500)]
+        for number, chunk in enumerate(chunks):
+            print 'Now Saving: %s/%s' % (number, len(chunks))
+            Company.objects.bulk_create(chunk)
+
+
 
     @classmethod
     def get_symbol_dicts(cls):
@@ -99,13 +108,15 @@ class GetDailyStockInfo():
             data = cls._request_csv_data(url)
             print '- response received'
 
-            cls._save_csv_data(data)
+            records = cls._create_records(data)
+            cls._save_records(records)
+
             print '- data saved'
 
             print '- Number of new entries:', len(Stock.objects.all()) - prev_len
             prev_len = len(Stock.objects.all())
 
-            time.sleep(3)
+            time.sleep(1)
 
         print 'All available stock data has been saved\n'
 
@@ -136,7 +147,8 @@ class GetDailyStockInfo():
             return list(data)
 
     @classmethod
-    def _save_csv_data(cls, data):
+    def _create_records(cls, data):
+        records = []
         for item in data:
             try:
                 price = float(item[1])
@@ -155,8 +167,14 @@ class GetDailyStockInfo():
                 print 'already exists:', Stock.objects.filter(company=company, date=date)
                 continue
 
-            s = Stock(company=company, price=price, volume=volume, date=date)
-            s.save()
+            records.append(Stock(company=company, price=price, volume=volume, date=date))
+        return records
+
+    @classmethod
+    def _save_records(cls, records):
+        chunks = [records[x:x + 500] for x in xrange(0, len(records), 500)]
+        for number, chunk in enumerate(chunks):
+            Stock.objects.bulk_create(chunk)
 
 
 class GetHistoricStockInfo():
@@ -183,7 +201,7 @@ class GetHistoricStockInfo():
 
                 print '- Number of new entries:', len(Stock.objects.all()) - prev_len
                 prev_len = len(Stock.objects.all())
-                time.sleep(3)
+                time.sleep(1)
 
             except UnicodeEncodeError:
                 print "\n\n\nUnicode Encoding error caught!\n\n\n"
@@ -204,7 +222,8 @@ class GetHistoricStockInfo():
         data = cls._request_csv_data(url)
         print '- response received'
 
-        cls._save_csv_data(data, company.symbol)
+        records = cls._create_records(data, company.symbol)
+        cls._save_records(records)
         print '- data saved'
 
 
@@ -231,7 +250,8 @@ class GetHistoricStockInfo():
 
 
     @classmethod
-    def _save_csv_data(cls, data, symbol):
+    def _create_records(cls, data, symbol):
+        records = []
         for item in data:
             try:
                 price = float(item[4])
@@ -257,7 +277,12 @@ class GetHistoricStockInfo():
                 continue
 
 
-            s = Stock(company=company, price=price, volume=volume, date=date)
-            s.save()
+            records.append(Stock(company=company, price=price, volume=volume, date=date))
+        return records
 
+    @classmethod
+    def _save_records(cls, records):
+        chunks = [records[x:x + 500] for x in xrange(0, len(records), 500)]
+        for number, chunk in enumerate(chunks):
+            Stock.objects.bulk_create(chunk)
 

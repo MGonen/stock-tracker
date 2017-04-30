@@ -184,7 +184,7 @@ class GetHistoricStockInfo(GetStockInfo):
     def _get_data(cls):
         companies = list(Company.objects.filter(historic_collected=False))
 
-        for company in companies[:20]:
+        for company in companies[:100]:
             try:
                 cls.remove_stock_data(company)
                 records = cls.get_stock_data(company)

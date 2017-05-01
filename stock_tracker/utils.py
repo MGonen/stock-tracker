@@ -181,9 +181,18 @@ class GetDailyStockInfo(GetStockInfo):
 
 class GetHistoricStockInfo(GetStockInfo):
     @classmethod
+    def main(cls):
+        for i in range(5):
+            print '\n Historic Stock Chunk %s/50' % (i,)
+            records = list(cls._get_data())
+            records = [item for sublist in records for item in sublist]
+            cls._save_records(records)
+            print 'All available stock data has been saved\n'
+
+    @classmethod
     def _get_data(cls):
         companies = list(Company.objects.filter(historic_collected=False))
-        total_number = 4000
+        total_number = 100
 
         for number, company in enumerate(companies[:total_number]):
             print "Processing Company %i/%i" % (number, total_number)

@@ -182,8 +182,8 @@ class GetDailyStockInfo(GetStockInfo):
 class GetHistoricStockInfo(GetStockInfo):
     @classmethod
     def main(cls):
-        for i in range(5):
-            print '\n Historic Stock Chunk %s/50' % (i,)
+        for i in range(50):
+            print '\n Historic Stock Chunk %s/50' % (i+1,)
             records = list(cls._get_data())
             records = [item for sublist in records for item in sublist]
             cls._save_records(records)

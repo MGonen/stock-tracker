@@ -183,7 +183,7 @@ class GetHistoricStockInfo(GetStockInfo):
     @classmethod
     def _get_data(cls):
         companies = list(Company.objects.filter(historic_collected=False))
-        total_number = 1000
+        total_number = 3000
 
         for number, company in enumerate(companies[:total_number]):
             print "Processing Company %i/%i" % (number, total_number)

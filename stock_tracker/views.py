@@ -37,7 +37,7 @@ class Main(View):
 
     def get_one_result(self, company, form):
         required_increase_percentage = float(form['increase_percentage'].value())
-        minimum_volume = float(form['minimum_volume'].value())
+        minimum_volume = float(form['minimum_volume'].value()) * 1000000
         start_date = form['start_date'].value()
         end_date = form['end_date'].value()
 

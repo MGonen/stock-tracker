@@ -1,13 +1,17 @@
 
 
 var i = 0;
+var total_start_time = Date.now();
 function getResults() {
     if (i === 0) {
-        start_time = Date.now();
+        console.log('Data fetching started');
+        total_start_time = Date.now();
         $('#myTable tbody').empty();
         results = []
     }
-    url = '/get-search-results/';
+
+    const start_time = Date.now();
+    const url = '/get-search-results/';
     $('#submit-btn').text('JSON ('+i+'/'+278+')');
 
     $.ajax({
@@ -25,11 +29,14 @@ function getResults() {
             results = results.concat(json_results);
             i++;
             if (i <= 278) {
+                const end_time = Date.now();
+                const total_time = Math.round((end_time-start_time)/1000);
+                console.log(i+'/278: '+total_time+' seconds');
                 getResults();
             } else {
                 i=0;
-                const end_time = Date.now();
-                console.log('finished in:', (end_time-start_time)/1000);
+                const total_end_time = Date.now();
+                console.log('finished in:', (total_end_time-total_start_time)/1000);
                 console.log('results:', results.length);
                 displayResults()
             }

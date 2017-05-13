@@ -44,12 +44,10 @@ class Main(View):
 
 
     def get(self, request):
-        return render(request, self.template_name)
+        today = datetime.datetime.today().strftime('%Y-%m-%d')
+        return render(request, self.template_name, {'today':today})
 
     def post(self, request):
-        print 'RETRIEVING DATA'
-        print 'percentage:', request.POST.get('percentage'), '\n'
-
         return render(request, self.template_name, {'results': self.get_results(request.POST)})
 
 
@@ -60,22 +58,10 @@ class GetResults():
         percentage = float(percentage)
         volume = float(volume)
         print 'GETTING CHUNK RESULTS. '
-        print 'All values:', percentage, volume, start_date, end_date, start_index, end_index
+        # print 'All values:', percentage, volume, start_date, end_date, start_index, end_index
         results = []
-        print 'Number of companies analyzed:', len(Company.objects.all()[start_index:end_index])
-        for number, company in enumerate(Company.objects.all()[start_index:end_index]):
-            # results.append(cls.get_one_result(company, percentage, volume, start_date, end_date))
-            if number % 100 == 0:
-                results.append({
-                    'symbol': company.symbol,
-                    'exchange': company.exchange,
-                    'country': company.country,
-                    'increase': 5,
-                    'start_price': 100,
-                    'end_price': 105,
-                    'volume': 100000000
-                })
-
+        for company in Company.objects.all()[start_index:end_index]:
+            results.append(cls.get_one_result(company, percentage, volume, start_date, end_date))
 
         results = filter(None, results)
         print 'FINISHED CHUNK. Number of results:', len(results)

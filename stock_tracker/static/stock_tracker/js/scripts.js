@@ -12,7 +12,6 @@ function handleSubmitBtnClick() {
     const submit_btn = $('#submit-btn');
     submit_btn.click(function (e) {
         e.preventDefault();
-        console.log('btn click reached');
         getResults();
     })
 }

@@ -63,8 +63,19 @@ class GetResults():
         print 'All values:', percentage, volume, start_date, end_date, start_index, end_index
         results = []
         print 'Number of companies analyzed:', len(Company.objects.all()[start_index:end_index])
-        for company in Company.objects.all()[start_index:end_index]:
-            results.append(cls.get_one_result(company, percentage, volume, start_date, end_date))
+        for number, company in enumerate(Company.objects.all()[start_index:end_index]):
+            # results.append(cls.get_one_result(company, percentage, volume, start_date, end_date))
+            if number % 100 == 0:
+                results.append({
+                    'symbol': company.symbol,
+                    'exchange': company.exchange,
+                    'country': company.country,
+                    'increase': 5,
+                    'start_price': 100,
+                    'end_price': 105,
+                    'volume': 100000000
+                })
+
 
         results = filter(None, results)
         print 'FINISHED CHUNK. Number of results:', len(results)

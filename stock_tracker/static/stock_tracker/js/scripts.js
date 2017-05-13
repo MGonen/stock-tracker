@@ -8,6 +8,14 @@ $(function() {
         });
 });
 
+function handleSubmitBtnClick() {
+    const submit_btn = $('#submit-btn');
+    submit_btn.click(function (e) {
+        e.preventDefault();
+        console.log('btn click reached');
+        getResults();
+    })
+}
 
 function showDetails() {
     const show_data_btn = $('#show-data-btn');
@@ -38,7 +46,7 @@ $(document).ready(function() {
     $('.spinner-div').hide();
     $('#hide-data-btn').hide();
     $('#details-table').hide();
-    $("#myTable").tablesorter();
+    handleSubmitBtnClick();
     showDetails();
     hideDetails();
     // showSpinner();

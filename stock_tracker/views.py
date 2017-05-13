@@ -69,13 +69,10 @@ class GetResults():
 
     @classmethod
     def get_one_result(cls, company, percentage, volume, start_date, end_date):
-        company_stocks = Stock.objects.filter(company=company)
-        start_date_stock = cls.get_closest_date_stock(company_stocks, start_date)
-        end_date_stock = cls.get_closest_date_stock(company_stocks, end_date)
-
-        # print '\ncompany:', company.name
-
-        if not start_date_stock or not end_date_stock:
+        try:
+            start_date_stock = Stock.objects.get(company=company, date=start_date)
+            end_date_stock = Stock.objects.get(company=company, date=end_date)
+        except Stock.DoesNotExist:
             # print 'Missing one of the dates'
             return
 

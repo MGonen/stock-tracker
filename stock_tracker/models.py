@@ -21,7 +21,7 @@ class Stock(models.Model):
     company = models.ForeignKey('Company')
     price = models.DecimalField(max_digits=10, decimal_places=2)
     volume = models.IntegerField()
-    date = models.DateField(default=timezone.now)
+    date = models.DateField(default=timezone.now, db_index=True)
 
     def __str__(self):
         return '%s - %s - %s - %s' % (self.company.name, self.price, self.volume, self.date)

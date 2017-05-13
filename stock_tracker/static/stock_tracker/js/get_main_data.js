@@ -9,10 +9,10 @@ function getResults() {
         $('#myTable tbody').empty();
         results = []
     }
-
+    i++;
     const start_time = Date.now();
     const url = '/get-search-results/';
-    $('#submit-btn').text('JSON ('+i+'/'+278+')');
+    $('#submit-btn').text('JSON ('+i+'/'+280+')');
 
     $.ajax({
         url: url,
@@ -27,17 +27,22 @@ function getResults() {
         dataType: 'json',
         success: function(json_results) {
             results = results.concat(json_results);
-            i++;
-            if (i <= 278) {
+            if (i < 280) {
                 const end_time = Date.now();
                 const total_time = Math.round((end_time-start_time)/1000);
-                console.log(i+'/278: '+total_time+' seconds');
+                const cumulative_time = Math.round((end_time-total_start_time)/1000);
+                console.log('');
+                console.log('Chunk '+ i + '/280');
+                console.log('       Chunk time:', total_time, 'seconds');
+                console.log('  Cumulative time:', cumulative_time, 'seconds');
+                console.log('    Total results:', results.length, 'records');
                 getResults();
             } else {
                 i=0;
                 const total_end_time = Date.now();
+                console.log('');
                 console.log('finished in:', (total_end_time-total_start_time)/1000);
-                console.log('results:', results.length);
+                console.log('Total number of results:', results.length);
                 displayResults()
             }
 

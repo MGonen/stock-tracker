@@ -104,6 +104,92 @@ class Main(View):
 
         return results
 
+    def get_results(self, form):
+        percentage = float(form['increase_percentage'].value())
+        min_volume = int(form['minimum_volume'].value()) * 1000000
+        max_volume = int(form['maximum_volume'].value()) * 1000000
+        start_date = form['start_date'].value()
+        end_date = form['end_date'].value()
+
+        whitelist_countries = [
+            u'Australia',
+            u'Austria',
+            u'Belgium',
+            u'Canada',
+            u'Denmark',
+            u'Finland',
+            u'France',
+            u'Germany',
+            u'Greece',
+            u'Hong Kong',
+            u'Iceland',
+            u'India',
+            u'International',
+            u'Italy',
+            u'Korea',
+            u'Latvia',
+            u'Lithuania',
+            u'Netherlands',
+            u'New Zealand',
+            u'Norway',
+            u'Portugal',
+            u'Singapore',
+            u'South Korea',
+            u'Spain',
+            u'Sweden',
+            u'Taiwan',
+            u'UK',
+            u'USA',
+        ]
+
+        date_filtered_stocks = Stock.objects.filter(Q(date=start_date) | Q(date=end_date)).order_by('company', 'date')
+        filtered_stocks = date_filtered_stocks.filter(company__country__in=whitelist_countries)
+
+        results = []
+
+        i = -1
+        while True:
+            i += 1
+            try:
+                start_date_stock = filtered_stocks[i]
+                end_date_stock = filtered_stocks[i + 1]
+            except IndexError:
+                print 'finished list'
+                break
+
+            # print '%s/%s' % (i, len(filtered_stocks))
+            if start_date_stock.company != end_date_stock.company:
+                continue
+
+            if start_date_stock.price == 0:
+                continue
+
+            increase_percentage = round(
+                100 * (end_date_stock.price - start_date_stock.price) / start_date_stock.price, 2)
+
+            if abs(increase_percentage) <= percentage:
+                # print 'Price difference not big enough:', abs(increase_percentage), required_increase_percentage, abs(increase_percentage) < required_increase_percentage
+                continue
+
+            if not (
+                        max_volume > start_date_stock.volume * start_date_stock.price > min_volume or max_volume > end_date_stock.volume * end_date_stock.price > min_volume):
+                # print 'Turn over not big enough',
+                continue
+
+            results.append({
+                'symbol': start_date_stock.company.symbol,
+                'exchange': end_date_stock.company.exchange,
+                'country': end_date_stock.company.country,
+                'increase': increase_percentage,
+                'start_price': start_date_stock.price,
+                'end_price': end_date_stock.price,
+                'volume': end_date_stock.volume * end_date_stock.price
+            })
+
+            i += 1 # plus 1 so it will jump the next record
+
+        return results
+
 
     def get(self, request):
         today = datetime.datetime.today()
@@ -119,8 +205,8 @@ class Main(View):
         print 'RETRIEVING DATA'
         form = MainForm(request.POST)
         if form.is_valid():
-            results = self.get_results_alt(form)
-            # results = self.get_results(form)
+            # results = self.get_results_alt(form)
+            results = self.get_results(form)
             print 'results:', len(results)
             return render(request, self.template_name, {'form': form, 'results': results})
 

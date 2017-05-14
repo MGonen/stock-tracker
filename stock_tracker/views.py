@@ -106,8 +106,13 @@ class Main(View):
 
 
     def get(self, request):
-        today = datetime.datetime.today().strftime('%Y-%m-%d')
-        form = MainForm(initial={'increase_percentage':'10', 'minimum_volume': '1', 'maximum_volume':1000, 'start_date': '2017-01-03', 'end_date': today})
+        today = datetime.datetime.today()
+        end_date = today - datetime.timedelta(days=today.weekday()) - datetime.timedelta(7)
+        formatted_end_date = end_date.strftime('%Y-%m-%d')
+        start_date = end_date - datetime.timedelta(91)
+        formatted_start_date = start_date.strftime('%Y-%m-%d')
+
+        form = MainForm(initial={'increase_percentage':'10', 'minimum_volume': '1', 'maximum_volume':1000, 'start_date': formatted_start_date, 'end_date': formatted_end_date})
         return render(request, self.template_name, {'form': form})
 
     def post(self, request):

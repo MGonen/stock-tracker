@@ -60,7 +60,7 @@ class Main(View):
         ]
 
         date_filtered_stocks = Stock.objects.filter(Q(date=start_date) | Q(date=end_date)).order_by('company', 'date')
-        filtered_stocks = date_filtered_stocks.filter(company__in=whitelist_countries)
+        filtered_stocks = date_filtered_stocks.filter(company__country__in=whitelist_countries)
 
         # print 'filtered stocks:', len(filtered_stocks)
 

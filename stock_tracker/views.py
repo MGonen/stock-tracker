@@ -28,7 +28,40 @@ class Main(View):
         start_date = form['start_date'].value()
         end_date = form['end_date'].value()
 
-        filtered_stocks = Stock.objects.filter(Q(date=start_date) | Q(date=end_date)).order_by('company', 'date')
+        whitelist_countries = [
+            u'Australia',
+            u'Austria',
+            u'Belgium',
+            u'Canada',
+            u'Denmark',
+            u'Finland',
+            u'France',
+            u'Germany',
+            u'Greece',
+            u'Hong Kong',
+            u'Iceland',
+            u'India',
+            u'International',
+            u'Italy',
+            u'Korea',
+            u'Latvia',
+            u'Lithuania',
+            u'Netherlands',
+            u'New Zealand',
+            u'Norway',
+            u'Portugal',
+            u'Singapore',
+            u'South Korea',
+            u'Spain',
+            u'Sweden',
+            u'Taiwan',
+            u'UK',
+            u'USA',
+        ]
+
+        date_filtered_stocks = Stock.objects.filter(Q(date=start_date) | Q(date=end_date)).order_by('company', 'date')
+        filtered_stocks = date_filtered_stocks.filter(company__in=whitelist_countries)
+
         # print 'filtered stocks:', len(filtered_stocks)
 
         results = []
@@ -129,7 +162,8 @@ class Main(View):
 
 
     def get(self, request):
-        form = MainForm(initial={'increase_percentage':'5', 'minimum_volume': '5', 'start_date': '2017-01-03', 'end_date': '2017-04-04'})
+        today = datetime.datetime.today().strftime('%Y-%m-%d')
+        form = MainForm(initial={'increase_percentage':'10', 'minimum_volume': '1', 'start_date': '2017-01-03', 'end_date': today})
         return render(request, self.template_name, {'form': form})
 
     def post(self, request):

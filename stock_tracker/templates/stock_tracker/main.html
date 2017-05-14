@@ -6,75 +6,63 @@
 
 {% block scripts %}
     <script src="{% static 'stock_tracker/js/scripts.js' %}"></script>
-    <script src="{% static 'stock_tracker/js/get_main_data.js' %}"></script>
 {% endblock %}
 
 
 {% block content %}
 
-    <form class="form-horizontal" method="POST" autocomplete="off">{% csrf_token %}
+    <form method="POST" class="form-horizontal">{% csrf_token %}
         <div class="form-group">
-            <label class="control-label col-sm-2" for="percentage">Percentage:</label>
-            <div class="col-sm-10">
-                <input type="text" class="form-control" id="percentage" placeholder="Enter percentage" name="percentage" value="10">
-            </div>
+            {% for field in form %}
+                <div class="fieldWrapper">
+                    <label class="control-label col-sm-2" for="{{ field.auto_id }}">{{ field.label }}:</label>
+                    <div class="col-sm-2">
+                        {{ field }}
+                    </div>
+                    <div class="col-sm-4" style="width: 100%"></div>
+                </div>
+            {% endfor %}
         </div>
 
-        <div class="form-group">
-            <label class="control-label col-sm-2" for="volume">Volume (in millions):</label>
-            <div class="col-sm-10">
-                <input type="text" class="form-control" id="volume" placeholder="Enter volume" name="volume" value="10">
-            </div>
+        <div class="col-sm-2"></div>
+        <div class="col-sm-6">
+            <button id="search-btn" name="submit" class="save btn btn-primary">Search</button>
         </div>
-
-        <div class="form-group">
-            <label class="control-label col-sm-2" for="startDate">Start Date:</label>
-            <div class="col-sm-10">
-                <input type="text" class="form-control date_form_input" id="startDate" placeholder="Enter start date" name="startDate" value="2017-01-01">
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label class="control-label col-sm-2" for="endDate">End date:</label>
-            <div class="col-sm-10">
-                <input type="text" class="form-control date_form_input" id="endDate" placeholder="Enter end date" name="endDate" value={{ today }}>
-            </div>
-        </div>
-
-{#        <div class="form-group">#}
-{#            <div class="col-sm-offset-2 col-sm-10">#}
-{#                <button id="post-btn" class="btn btn-default">Post Button</button>#}
-{#            </div>#}
-{#        </div>#}
-
-        <div class="form-group">
-            <div class="col-sm-offset-2 col-sm-10">
-                <button id="submit-btn" class="btn btn-primary">JSON Button</button>
-            </div>
-        </div>
-  </form>
+    </form>
 
     <div class="spinner-div">
         <i class="fa fa-spinner" aria-hidden="true"></i>
     </div>
 
 
-    <h1>Results:</h1>
-    <table class="table table-striped tablesorter" id="myTable">
-        <thead>
-            <tr>
-                <td>Company</td>
-                <td>Exchange</td>
-                <td>Country</td>
-                <td>Increase (%)</td>
-                <td>Start Price</td>
-                <td>End Price</td>
-                <td>Average Volume Turnover</td>
-            </tr>
-        </thead>
-        <tbody>
-
-        </tbody>
-    </table>
-
+    {% if results %}
+        <h1>Results:</h1>
+        <table class="table table-striped tablesorter" id="myTable">
+            <thead>
+                <tr>
+{#                    <td><a href="{% url '' %}">Company name</a></td>#}
+                    <td>Company</td>
+                    <td>Exchange</td>
+                    <td>Country</td>
+                    <td>Increase (%)</td>
+                    <td>Start Price</td>
+                    <td>End Price</td>
+                    <td>Average Volume Turnover</td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                    <tr>
+                        <td><a href={% url 'results_details' start_date=form.start_date.value symbol=result.symbol end_date=form.end_date.value %}>{{ result.symbol }}</a></td>
+                        <td>{{ result.exchange }}</td>
+                        <td>{{ result.country }}</td>
+                        <td>{{ result.increase }}%</td>
+                        <td>{{ result.start_price }}</td>
+                        <td>{{ result.end_price }}</td>
+                        <td>{{ result.volume|intcomma }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
 {% endblock %}

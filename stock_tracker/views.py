@@ -24,7 +24,8 @@ class Main(View):
 
     def get_results_alt(self, form):
         percentage = float(form['increase_percentage'].value())
-        volume = float(form['minimum_volume'].value()) * 1000000
+        min_volume = int(form['minimum_volume'].value()) * 1000000
+        max_volume = int(form['maximum_volume'].value()) * 1000000
         start_date = form['start_date'].value()
         end_date = form['end_date'].value()
 
@@ -62,8 +63,6 @@ class Main(View):
         date_filtered_stocks = Stock.objects.filter(Q(date=start_date) | Q(date=end_date)).order_by('company', 'date')
         filtered_stocks = date_filtered_stocks.filter(company__country__in=whitelist_countries)
 
-        # print 'filtered stocks:', len(filtered_stocks)
-
         results = []
 
         for i in range(len(filtered_stocks)-1):
@@ -89,7 +88,7 @@ class Main(View):
                 continue
 
 
-            if start_date_stock.volume * start_date_stock.price < volume or end_date_stock.volume * end_date_stock.price < volume:
+            if not (max_volume > start_date_stock.volume * start_date_stock.price > min_volume or max_volume > end_date_stock.volume * end_date_stock.price > min_volume):
                 # print 'Turn over not big enough',
                 continue
 
@@ -103,67 +102,12 @@ class Main(View):
                 'volume': end_date_stock.volume * end_date_stock.price
             })
 
-            # print 'result added', start_date_stock.company
-
-
         return results
-
-    def get_results(self, form):
-        print 'GETTING RESULTS'
-        start_time = datetime.datetime.now().replace(microsecond=0)
-        results = []
-
-        for company in Company.objects.all():
-            results.append(self.get_one_result(company, form))
-
-        results = filter(None, results)
-        end_time = datetime.datetime.now().replace(microsecond=0)
-        print 'total time:', end_time - start_time
-        return results
-
-
-    def get_one_result(self, company, form):
-        required_increase_percentage = float(form['increase_percentage'].value())
-        minimum_volume = float(form['minimum_volume'].value()) * 1000000
-        start_date = form['start_date'].value()
-        end_date = form['end_date'].value()
-
-        company_stocks = Stock.objects.filter(company=company)
-        try:
-            start_date_stock = Stock.objects.get(company=company, date=start_date)
-            end_date_stock = Stock.objects.get(company=company, date=end_date)
-        except Stock.DoesNotExist:
-            return
-
-        # print '\ncompany:', company.name
-
-        if not start_date_stock or not end_date_stock:
-            # print 'Missing one of the dates'
-            return
-
-        if start_date_stock.price == 0:
-            increase_percentage = 0
-        else:
-            increase_percentage = round(100*(end_date_stock.price - start_date_stock.price)/start_date_stock.price,2)
-
-        if abs(increase_percentage) <= required_increase_percentage:
-            # print 'Price difference not big enough:', abs(increase_percentage), required_increase_percentage, abs(increase_percentage) < required_increase_percentage
-            return
-
-        if start_date_stock.volume * start_date_stock.price < minimum_volume or end_date_stock.volume * end_date_stock.price < minimum_volume:
-            # print 'Turn over not big enough'
-            return
-
-        volume = end_date_stock.volume * end_date_stock.price
-        return {'symbol': company.symbol, 'exchange': end_date_stock.company.exchange, 'country': end_date_stock.company.country, 'increase': increase_percentage, 'start_price':start_date_stock.price, 'end_price': end_date_stock.price, 'volume': volume}
-
-
-
 
 
     def get(self, request):
         today = datetime.datetime.today().strftime('%Y-%m-%d')
-        form = MainForm(initial={'increase_percentage':'10', 'minimum_volume': '1', 'start_date': '2017-01-03', 'end_date': today})
+        form = MainForm(initial={'increase_percentage':'10', 'minimum_volume': '1', 'maximum_volume':1000, 'start_date': '2017-01-03', 'end_date': today})
         return render(request, self.template_name, {'form': form})
 
     def post(self, request):

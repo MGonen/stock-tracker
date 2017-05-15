@@ -1,4 +1,5 @@
 from django.utils import timezone
+import datetime
 
 import requests
 import scriptine
@@ -258,7 +259,7 @@ class GetHistoricStockInfo(GetStockInfo):
 class GetResults():
     @classmethod
     def main(cls, filtered_stocks, percentage, min_volume, max_volume):
-        print 'reached'
+        start_time = datetime.datetime.now().replace(microsecond=0)
         results = []
 
         for i in range(len(filtered_stocks) - 1):
@@ -272,6 +273,8 @@ class GetResults():
             results.append(cls.check_stock_pair(start_date_stock, end_date_stock, percentage, min_volume, max_volume))
 
         results = filter(None, results)
+        end_time = datetime.datetime.now().replace(microsecond=0)
+        print 'Time to get results:', end_time-start_time
         return results
 
     @classmethod

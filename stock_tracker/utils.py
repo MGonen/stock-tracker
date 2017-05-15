@@ -255,4 +255,54 @@ class GetHistoricStockInfo(GetStockInfo):
         return records
 
 
+class GetResults():
+    @classmethod
+    def main(cls, filtered_stocks, percentage, min_volume, max_volume):
+        print 'reached'
+        results = []
+
+        for i in range(len(filtered_stocks) - 1):
+            if filtered_stocks[i].company != filtered_stocks[i + 1].company:
+                continue
+
+            else:
+                start_date_stock = filtered_stocks[i]
+                end_date_stock = filtered_stocks[i + 1]
+
+            results.append(cls.check_stock_pair(start_date_stock, end_date_stock, percentage, min_volume, max_volume))
+
+        results = filter(None, results)
+        return results
+
+    @classmethod
+    def check_stock_pair(cls, start_date_stock, end_date_stock, percentage, min_volume, max_volume):
+        if not start_date_stock or not end_date_stock:
+            # print 'Missing one of the dates'
+            return
+
+        if start_date_stock.price == 0:
+            increase_percentage = 0
+        else:
+            increase_percentage = round(100 * (end_date_stock.price - start_date_stock.price) / start_date_stock.price,
+                                        2)
+
+        if abs(increase_percentage) <= percentage:
+            # print 'Price difference not big enough:', abs(increase_percentage), required_increase_percentage, abs(increase_percentage) < required_increase_percentage
+            return
+
+        if not (max_volume > start_date_stock.volume * start_date_stock.price > min_volume or max_volume > end_date_stock.volume * end_date_stock.price > min_volume):
+            # print 'Turn over not big enough',
+            return
+
+        return {
+            'symbol': start_date_stock.company.symbol,
+            'exchange': end_date_stock.company.exchange,
+            'country': end_date_stock.company.country,
+            'increase': increase_percentage,
+            'start_price': start_date_stock.price,
+            'end_price': end_date_stock.price,
+            'volume': end_date_stock.volume * end_date_stock.price
+        }
+
+
 

@@ -295,7 +295,10 @@ class GetResults():
             u'USA',
         ]
 
-        date_filtered_stocks = Stock.objects.filter(Q(date=start_date) | Q(date=end_date)).order_by('company', 'date')
+        start_date_stocks = cls.get_date_filtered_stocks(start_date)
+        end_date_stocks = cls.get_date_filtered_stocks(end_date)
+        date_filtered_stocks = (start_date_stocks | end_date_stocks).order_by('company', 'date')
+
         filtered_stocks = date_filtered_stocks.filter(company__country__in=whitelist_countries)
 
         for i in range(len(filtered_stocks) - 1):
@@ -307,6 +310,24 @@ class GetResults():
                 end_date_stock = filtered_stocks[i + 1]
 
             yield cls.check_stock_pair(start_date_stock, end_date_stock, percentage, min_volume, max_volume)
+
+    @classmethod
+    def get_date_filtered_stocks(cls, date):
+        n = 0
+        stocks = Stock.objects.filter(date=date)
+        while n <= 7:
+            n += 1
+            found_companies = map(lambda x: x[0], stocks.values_list('company'))
+            date = cls.get_date(date, n)
+            date_stocks = Stock.objects.filter(date=date)
+            stocks = stocks | date_stocks.exclude(company__in=found_companies)
+        return stocks
+
+    @classmethod
+    def get_date(cls, date, n):
+        date = datetime.datetime.strptime(date, '%Y-%m-%d')
+        date -= datetime.timedelta(days=n)
+        return date.strftime('%Y-%m-%d')
 
     @classmethod
     def check_stock_pair(cls, start_date_stock, end_date_stock, percentage, min_volume, max_volume):

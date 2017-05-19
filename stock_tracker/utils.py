@@ -298,9 +298,6 @@ class GetResults():
         date_filtered_stocks = Stock.objects.filter(Q(date=start_date) | Q(date=end_date)).order_by('company', 'date')
         filtered_stocks = date_filtered_stocks.filter(company__country__in=whitelist_countries)
 
-        start_time = datetime.datetime.now().replace(microsecond=0)
-        results = []
-
         for i in range(len(filtered_stocks) - 1):
             if filtered_stocks[i].company != filtered_stocks[i + 1].company:
                 continue
@@ -309,12 +306,7 @@ class GetResults():
                 start_date_stock = filtered_stocks[i]
                 end_date_stock = filtered_stocks[i + 1]
 
-            results.append(cls.check_stock_pair(start_date_stock, end_date_stock, percentage, min_volume, max_volume))
-
-        results = filter(None, results)
-        end_time = datetime.datetime.now().replace(microsecond=0)
-        print 'Time to get results:', end_time-start_time
-        return results
+            yield cls.check_stock_pair(start_date_stock, end_date_stock, percentage, min_volume, max_volume)
 
     @classmethod
     def check_stock_pair(cls, start_date_stock, end_date_stock, percentage, min_volume, max_volume):
@@ -336,15 +328,14 @@ class GetResults():
             # print 'Turn over not big enough',
             return
 
-        return {
-            'symbol': start_date_stock.company.symbol,
-            'exchange': end_date_stock.company.exchange,
-            'country': end_date_stock.company.country,
-            'increase': increase_percentage,
-            'start_price': start_date_stock.price,
-            'end_price': end_date_stock.price,
-            'volume': end_date_stock.volume * end_date_stock.price
-        }
-
+        return [
+            start_date_stock.company.name,
+            start_date_stock.company.exchange,
+            start_date_stock.company.country,
+            increase_percentage,
+            start_date_stock.price,
+            end_date_stock.price,
+            end_date_stock.volume * end_date_stock.price
+        ]
 
 

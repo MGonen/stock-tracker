@@ -5,9 +5,11 @@ from django.shortcuts import render, redirect
 from django.views.generic import View
 from django.utils.dateparse import parse_date
 from django.urls import reverse
+from django.http import HttpResponse
 
 from jsonview.decorators import json_view
 import datetime
+import csv
 
 from .forms import MainForm
 from .models import Company, Stock
@@ -21,6 +23,9 @@ from .utils import GetResults
 class Main(View):
     template_name = 'stock_tracker/main.html'
 
+    def convert_date(self, date):
+        return '%s-%s-%s' % (date[8:10], date[5:7], date[0:4])
+
     def get_results(self, form):
         percentage = form['increase_percentage'].value()
         min_volume = form['minimum_volume'].value()
@@ -28,11 +33,39 @@ class Main(View):
         start_date = form['start_date'].value()
         end_date = form['end_date'].value()
 
-        return GetResults.main(percentage, min_volume, max_volume, start_date, end_date)
+        # Create the HttpResponse object with the appropriate CSV header.
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="Companies %s - %s.csv"' % (start_date, end_date)
+
+        writer = csv.writer(response)
+
+        extra_content = [
+            ['', 'From:', self.convert_date(start_date)],
+            ['', 'To:', self.convert_date(end_date)],
+            ['', 'Minimum Percentage:', percentage],
+            ['', 'Minimum Turnover Volume (in millions):', float(min_volume)],
+            ['', 'Maximum Turnover Volume (in millions):', float(max_volume)],
+        ]
+
+        writer.writerow([''])
+        writer.writerow(['COMPANY', 'EXCHANGE', 'COUNTRY', 'INCREASE PERCENTAGE', 'START PRICE', 'END PRICE', 'TURNOVER VOLUME'])
+
+        i = -1
+        for result in GetResults.main(percentage, min_volume, max_volume, start_date, end_date):
+            if result:
+                i += 1
+                try:
+                    if i < len(extra_content):
+                        result += extra_content[i]
+                    writer.writerow(result)
+                except:
+                    continue
+
+        return response
 
     def get(self, request):
         today = datetime.datetime.today()
-        end_date = today - datetime.timedelta(days=today.weekday()) - datetime.timedelta(7)
+        end_date = today - datetime.timedelta(days=today.weekday()) - datetime.timedelta(6)
         formatted_end_date = end_date.strftime('%Y-%m-%d')
         start_date = end_date - datetime.timedelta(91)
         formatted_start_date = start_date.strftime('%Y-%m-%d')
@@ -40,14 +73,19 @@ class Main(View):
         form = MainForm(initial={'increase_percentage':'10', 'minimum_volume': '1', 'maximum_volume':1000, 'start_date': formatted_start_date, 'end_date': formatted_end_date})
         return render(request, self.template_name, {'form': form})
 
+    # def post(self, request):
+    #     print 'RETRIEVING DATA'
+    #     form = MainForm(request.POST)
+    #     if form.is_valid():
+    #         # results = self.get_results_alt(form)
+    #         results = self.get_results(form)
+    #         print 'results:', len(results)
+    #         return render(request, self.template_name, {'form': form, 'results': results})
+
     def post(self, request):
-        print 'RETRIEVING DATA'
         form = MainForm(request.POST)
         if form.is_valid():
-            # results = self.get_results_alt(form)
-            results = self.get_results(form)
-            print 'results:', len(results)
-            return render(request, self.template_name, {'form': form, 'results': results})
+            return self.get_results(form)
 
 
 def get_result_details(symbol, start_date, end_date):

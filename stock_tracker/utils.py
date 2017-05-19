@@ -312,21 +312,22 @@ class GetResults():
             yield cls.check_stock_pair(start_date_stock, end_date_stock, percentage, min_volume, max_volume)
 
     @classmethod
-    def get_date_filtered_stocks(cls, date):
+    def get_date_filtered_stocks(cls, org_date):
         n = 0
-        stocks = Stock.objects.filter(date=date)
-        while n <= 7:
+        stocks = Stock.objects.filter(date=org_date)
+        while n < 7:
             n += 1
-            found_companies = map(lambda x: x[0], stocks.values_list('company'))
-            date = cls.get_date(date, n)
-            date_stocks = Stock.objects.filter(date=date)
-            stocks = stocks | date_stocks.exclude(company__in=found_companies)
+            for i in [1, -1]:
+                found_companies = map(lambda x: x[0], stocks.values_list('company'))
+                date = cls.get_date(org_date, n, i)
+                date_stocks = Stock.objects.filter(date=date)
+                stocks = stocks | date_stocks.exclude(company__in=found_companies)
         return stocks
 
     @classmethod
-    def get_date(cls, date, n):
+    def get_date(cls, date, n, i):
         date = datetime.datetime.strptime(date, '%Y-%m-%d')
-        date -= datetime.timedelta(days=n)
+        date -= datetime.timedelta(days= n*i*1)
         return date.strftime('%Y-%m-%d')
 
     @classmethod

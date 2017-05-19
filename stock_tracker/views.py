@@ -5,7 +5,6 @@ from django.shortcuts import render, redirect
 from django.views.generic import View
 from django.utils.dateparse import parse_date
 from django.urls import reverse
-from django.db.models import Q
 
 from jsonview.decorators import json_view
 import datetime
@@ -23,135 +22,13 @@ class Main(View):
     template_name = 'stock_tracker/main.html'
 
     def get_results(self, form):
-        percentage = float(form['increase_percentage'].value())
-        min_volume = int(form['minimum_volume'].value()) * 1000000
-        max_volume = int(form['maximum_volume'].value()) * 1000000
+        percentage = form['increase_percentage'].value()
+        min_volume = form['minimum_volume'].value()
+        max_volume = form['maximum_volume'].value()
         start_date = form['start_date'].value()
         end_date = form['end_date'].value()
 
-        whitelist_countries = [
-            u'Australia',
-            u'Austria',
-            u'Belgium',
-            u'Canada',
-            u'Denmark',
-            u'Finland',
-            u'France',
-            u'Germany',
-            u'Greece',
-            u'Hong Kong',
-            u'Iceland',
-            u'India',
-            u'International',
-            u'Italy',
-            u'Korea',
-            u'Latvia',
-            u'Lithuania',
-            u'Netherlands',
-            u'New Zealand',
-            u'Norway',
-            u'Portugal',
-            u'Singapore',
-            u'South Korea',
-            u'Spain',
-            u'Sweden',
-            u'Taiwan',
-            u'UK',
-            u'USA',
-        ]
-
-        date_filtered_stocks = Stock.objects.filter(Q(date=start_date) | Q(date=end_date)).order_by('company', 'date')
-        filtered_stocks = date_filtered_stocks.filter(company__country__in=whitelist_countries)
-
-        return GetResults.main(filtered_stocks, percentage, min_volume, max_volume)
-
-    # def get_results_alt(self, form):
-    #     percentage = float(form['increase_percentage'].value())
-    #     min_volume = int(form['minimum_volume'].value()) * 1000000
-    #     max_volume = int(form['maximum_volume'].value()) * 1000000
-    #     start_date = form['start_date'].value()
-    #     end_date = form['end_date'].value()
-    #
-    #     whitelist_countries = [
-    #         u'Australia',
-    #         u'Austria',
-    #         u'Belgium',
-    #         u'Canada',
-    #         u'Denmark',
-    #         u'Finland',
-    #         u'France',
-    #         u'Germany',
-    #         u'Greece',
-    #         u'Hong Kong',
-    #         u'Iceland',
-    #         u'India',
-    #         u'International',
-    #         u'Italy',
-    #         u'Korea',
-    #         u'Latvia',
-    #         u'Lithuania',
-    #         u'Netherlands',
-    #         u'New Zealand',
-    #         u'Norway',
-    #         u'Portugal',
-    #         u'Singapore',
-    #         u'South Korea',
-    #         u'Spain',
-    #         u'Sweden',
-    #         u'Taiwan',
-    #         u'UK',
-    #         u'USA',
-    #     ]
-    #
-    #     date_filtered_stocks = Stock.objects.filter(Q(date=start_date) | Q(date=end_date)).order_by('company', 'date')
-    #     filtered_stocks = date_filtered_stocks.filter(company__country__in=whitelist_countries)
-    #
-    #     results = []
-    #
-    #     for i in range(len(filtered_stocks)-1):
-    #         if filtered_stocks[i].company != filtered_stocks[i+1].company:
-    #             continue
-    #
-    #         else:
-    #             start_date_stock = filtered_stocks[i]
-    #             end_date_stock = filtered_stocks[i + 1]
-    #
-    #         results.append(self.check_stock_pair(start_date_stock, end_date_stock, percentage, min_volume, max_volume))
-    #
-    #     results = filter(None, results)
-    #     return results
-    #
-    # def check_stock_pair(self, start_date_stock, end_date_stock, percentage, min_volume, max_volume):
-    #     if not start_date_stock or not end_date_stock:
-    #         # print 'Missing one of the dates'
-    #         return
-    #
-    #     if start_date_stock.price == 0:
-    #         increase_percentage = 0
-    #     else:
-    #         increase_percentage = round(100 * (end_date_stock.price - start_date_stock.price) / start_date_stock.price,
-    #                                     2)
-    #
-    #     if abs(increase_percentage) <= percentage:
-    #         # print 'Price difference not big enough:', abs(increase_percentage), required_increase_percentage, abs(increase_percentage) < required_increase_percentage
-    #         return
-    #
-    #     if not (
-    #                 max_volume > start_date_stock.volume * start_date_stock.price > min_volume or max_volume > end_date_stock.volume * end_date_stock.price > min_volume):
-    #         # print 'Turn over not big enough',
-    #         return
-    #
-    #     return {
-    #         'symbol': start_date_stock.company.symbol,
-    #         'exchange': end_date_stock.company.exchange,
-    #         'country': end_date_stock.company.country,
-    #         'increase': increase_percentage,
-    #         'start_price': start_date_stock.price,
-    #         'end_price': end_date_stock.price,
-    #         'volume': end_date_stock.volume * end_date_stock.price
-    #     }
-    #
-
+        return GetResults.main(percentage, min_volume, max_volume, start_date, end_date)
 
     def get(self, request):
         today = datetime.datetime.today()

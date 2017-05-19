@@ -8,6 +8,7 @@ import csv
 import xlrd
 import json
 import time
+from django.db.models import Q
 
 from stock_tracker.models import Company, Stock
 
@@ -258,7 +259,45 @@ class GetHistoricStockInfo(GetStockInfo):
 
 class GetResults():
     @classmethod
-    def main(cls, filtered_stocks, percentage, min_volume, max_volume):
+    def main(cls, percentage, min_volume, max_volume, start_date, end_date):
+        percentage = float(percentage)
+        min_volume = int(float(min_volume) * 1000000)
+        max_volume = int(float(max_volume) * 1000000)
+
+        whitelist_countries = [
+            u'Australia',
+            u'Austria',
+            u'Belgium',
+            u'Canada',
+            u'Denmark',
+            u'Finland',
+            u'France',
+            u'Germany',
+            u'Greece',
+            u'Hong Kong',
+            u'Iceland',
+            u'India',
+            u'International',
+            u'Italy',
+            u'Korea',
+            u'Latvia',
+            u'Lithuania',
+            u'Netherlands',
+            u'New Zealand',
+            u'Norway',
+            u'Portugal',
+            u'Singapore',
+            u'South Korea',
+            u'Spain',
+            u'Sweden',
+            u'Taiwan',
+            u'UK',
+            u'USA',
+        ]
+
+        date_filtered_stocks = Stock.objects.filter(Q(date=start_date) | Q(date=end_date)).order_by('company', 'date')
+        filtered_stocks = date_filtered_stocks.filter(company__country__in=whitelist_countries)
+
         start_time = datetime.datetime.now().replace(microsecond=0)
         results = []
 

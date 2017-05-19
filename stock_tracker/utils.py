@@ -356,7 +356,9 @@ class GetResults():
             increase_percentage,
             start_date_stock.price,
             end_date_stock.price,
-            end_date_stock.volume * end_date_stock.price
+            end_date_stock.volume * end_date_stock.price,
+            start_date_stock.date,
+            end_date_stock.date
         ]
 
 

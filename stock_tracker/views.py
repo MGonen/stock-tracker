@@ -37,7 +37,7 @@ class Main(View):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="Companies %s - %s.csv"' % (start_date, end_date)
 
-        writer = csv.writer(response)
+        writer = csv.writer(response, delimiter=str(';'), dialect='excel')
 
         extra_content = [
             ['', 'From:', self.convert_date(start_date)],

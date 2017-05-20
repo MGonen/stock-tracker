@@ -300,14 +300,19 @@ class GetResults():
         date_filtered_stocks = (start_date_stocks | end_date_stocks).order_by('company', 'date')
 
         filtered_stocks = date_filtered_stocks.filter(company__country__in=whitelist_countries)
+        part_of_pair = False
 
         for i in range(len(filtered_stocks) - 1):
             if filtered_stocks[i].company != filtered_stocks[i + 1].company:
+                part_of_pair = False
                 continue
 
             else:
+                if part_of_pair == True:
+                    print 'Already part of pair'
                 start_date_stock = filtered_stocks[i]
                 end_date_stock = filtered_stocks[i + 1]
+                part_of_pair = True
 
             yield cls.check_stock_pair(start_date_stock, end_date_stock, percentage, min_volume, max_volume)
 

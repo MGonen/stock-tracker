@@ -27,7 +27,8 @@ class Main(View):
         return '%s-%s-%s' % (date[8:10], date[5:7], date[0:4])
 
     def get_results(self, form):
-        percentage = form['increase_percentage'].value()
+        min_percentage = form['min_percentage_increase'].value()
+        max_percentage = form['max_percentage_increase'].value()
         min_volume = form['minimum_volume'].value()
         max_volume = form['maximum_volume'].value()
         start_date = form['start_date'].value()
@@ -42,7 +43,8 @@ class Main(View):
         extra_content = [
             ['', 'From:', self.convert_date(start_date)],
             ['', 'To:', self.convert_date(end_date)],
-            ['', 'Minimum Percentage:', percentage],
+            ['', 'Minimum Percentage increase:', min_percentage],
+            ['', 'Maximum Percentage increase:', max_percentage],
             ['', 'Minimum Turnover Volume (in millions):', float(min_volume)],
             ['', 'Maximum Turnover Volume (in millions):', float(max_volume)],
         ]
@@ -51,7 +53,7 @@ class Main(View):
         writer.writerow(['COMPANY', 'EXCHANGE', 'COUNTRY', 'INCREASE PERCENTAGE', 'START PRICE', 'END PRICE', 'TURNOVER VOLUME', 'START DATE', 'END DATE'])
 
         i = -1
-        for result in GetResults.main(percentage, min_volume, max_volume, start_date, end_date):
+        for result in GetResults.main(min_percentage, max_percentage, min_volume, max_volume, start_date, end_date):
             if result:
                 i += 1
                 try:
@@ -70,7 +72,7 @@ class Main(View):
         start_date = end_date - datetime.timedelta(91)
         formatted_start_date = start_date.strftime('%Y-%m-%d')
 
-        form = MainForm(initial={'increase_percentage':'10', 'minimum_volume': '1', 'maximum_volume':1000, 'start_date': formatted_start_date, 'end_date': formatted_end_date})
+        form = MainForm(initial={"min_percentage_increase": '10', 'max_percentage': '20', 'minimum_volume': '1', 'maximum_volume':1000, 'start_date': formatted_start_date, 'end_date': formatted_end_date})
         return render(request, self.template_name, {'form': form})
 
     # def post(self, request):

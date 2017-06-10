@@ -259,8 +259,9 @@ class GetHistoricStockInfo(GetStockInfo):
 
 class GetResults():
     @classmethod
-    def main(cls, percentage, min_volume, max_volume, start_date, end_date):
-        percentage = float(percentage)
+    def main(cls, min_percentage, max_percentage, min_volume, max_volume, start_date, end_date):
+        min_percentage = float(min_percentage)
+        max_percentage = float(max_percentage)
         min_volume = int(float(min_volume) * 1000000)
         max_volume = int(float(max_volume) * 1000000)
 
@@ -314,7 +315,7 @@ class GetResults():
                 end_date_stock = filtered_stocks[i + 1]
                 part_of_pair = True
 
-            yield cls.check_stock_pair(start_date_stock, end_date_stock, percentage, min_volume, max_volume)
+            yield cls.check_stock_pair(start_date_stock, end_date_stock, min_percentage, max_percentage, min_volume, max_volume)
 
     @classmethod
     def get_date_filtered_stocks(cls, org_date):
@@ -336,7 +337,13 @@ class GetResults():
         return date.strftime('%Y-%m-%d')
 
     @classmethod
-    def check_stock_pair(cls, start_date_stock, end_date_stock, percentage, min_volume, max_volume):
+    def check_stock_pair(cls, start_date_stock, end_date_stock, min_percentage, max_percentage, min_volume, max_volume):
+        if max_percentage < min_percentage:
+            min_percentage, max_percentage = max_percentage, min_percentage # if the user accidentally makes a mistake in min and max, it is corrected here
+
+        if max_volume < min_volume:
+            min_volume, max_volume = max_volume, min_volume # if the user accidentally makes a mistake in min and max, it is corrected here
+
         if not start_date_stock or not end_date_stock:
             # print 'Missing one of the dates'
             return
@@ -347,7 +354,7 @@ class GetResults():
             increase_percentage = round(100 * (end_date_stock.price - start_date_stock.price) / start_date_stock.price,
                                         2)
 
-        if abs(increase_percentage) <= percentage:
+        if  increase_percentage < min_percentage  or increase_percentage > max_percentage:
             # print 'Price difference not big enough:', abs(increase_percentage), required_increase_percentage, abs(increase_percentage) < required_increase_percentage
             return
 

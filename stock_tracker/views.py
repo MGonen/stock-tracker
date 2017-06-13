@@ -50,7 +50,7 @@ class Main(View):
         ]
 
         writer.writerow([''])
-        writer.writerow(['COMPANY', 'EXCHANGE', 'COUNTRY', 'INCREASE PERCENTAGE', 'START PRICE', 'END PRICE', 'TURNOVER VOLUME', 'START DATE', 'END DATE'])
+        writer.writerow(['COMPANY', 'TICKER', 'EXCHANGE', 'COUNTRY', 'INCREASE PERCENTAGE', 'START PRICE', 'END PRICE', 'TURNOVER VOLUME', 'START DATE', 'END DATE'])
 
         i = -1
         for result in GetResults.main(min_percentage, max_percentage, min_volume, max_volume, start_date, end_date):

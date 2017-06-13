@@ -364,6 +364,7 @@ class GetResults():
 
         return [
             start_date_stock.company.name,
+            start_date_stock.company.symbol,
             start_date_stock.company.exchange,
             start_date_stock.company.country,
             increase_percentage,
